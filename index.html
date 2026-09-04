@@ -1,579 +1,230 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Combined SLW SNR Simulator • Hively + Nikolova-Zimmerman</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&amp;family=Space+Grotesk:wght@500;600&amp;display=swap');
-        
-        body { font-family: 'Inter', system_ui, sans-serif; }
-        .font-display { font-family: 'Space Grotesk', 'Inter', system_ui, sans-serif; font-weight: 600; }
-        
-        .section-header { font-family: 'Space Grotesk', 'Inter', system_ui, sans-serif; letter-spacing: -.025em; }
-        
-        .metric-card { transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s cubic-bezier(0.4, 0.0, 0.2, 1); }
-        .metric-card:hover { transform: translateY(-2px); box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1); }
-        
-        .formula { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; background-color: #f8fafc; padding: 0.6rem 0.9rem; border-radius: 0.5rem; border-left: 4px solid #0ea5e9; font-size: 0.875rem; }
-        
-        .system-label { font-size: 0.65rem; letter-spacing: 0.5px; font-weight: 700; padding: 1px 8px; border-radius: 9999px; }
-        
-        .hively { --accent: #f59e0b; }
-        .nz { --accent: #10b981; }
-        
-        .overlay-chart { position: relative; }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="format-detection" content="telephone=no">
+  <title>Combined SLW SNR Simulator • Hively + Nikolova–Zimmerman</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+  <style>
+    body { font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; }
+    .font-display { font-weight: 700; letter-spacing: -0.02em; }
+    input[type=range] { width: 100%; }
+  </style>
 </head>
 <body class="bg-slate-50 text-slate-800">
-    <!-- Header -->
-    <header class="bg-white border-b border-slate-200 sticky top-0 z-50">
-        <div class="max-w-screen-2xl mx-auto px-6 py-4">
-            <div class="flex items-center justify-between">
-                <div class="flex items-center gap-x-3">
-                    <div class="w-11 h-11 bg-gradient-to-br from-sky-600 to-indigo-600 rounded-2xl flex items-center justify-center shadow-inner">
-                        <i class="fa-solid fa-waveform-lines text-white text-3xl"></i>
-                    </div>
-                    <div>
-                        <h1 class="font-display text-3xl tracking-tighter font-semibold text-slate-900">Combined SLW SNR Simulator</h1>
-                        <p class="text-xs text-slate-500 -mt-1">Hively (EED/Patent)  •  Nikolova-Zimmerman (2007)</p>
-                    </div>
-                </div>
-                <div class="flex items-center gap-x-2">
-                    <div class="px-3 py-1 bg-slate-100 rounded-3xl text-xs font-medium flex items-center gap-x-2">
-                        <div class="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
-                        <span class="text-slate-600">Educational • Two Models • Common Range</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </header>
+  <header class="bg-white border-b border-slate-200 sticky top-0 z-50">
+    <div class="max-w-6xl mx-auto px-4 py-4 flex flex-wrap items-center justify-between gap-3">
+      <div>
+        <h1 class="font-display text-2xl text-slate-900">Combined SLW SNR Simulator</h1>
+        <p class="text-xs text-slate-500">Hively (EED / patent) · Nikolova–Zimmerman (2007) · shared range</p>
+      </div>
+      <a class="text-xs text-sky-700 underline" href="https://9wzg44nz44-glitch.github.io/">← Hub</a>
+    </div>
+  </header>
 
-    <div class="max-w-screen-2xl mx-auto px-6 pt-6 pb-12">
-        
-        <!-- Intro -->
-        <div class="max-w-4xl mb-8">
-            <p class="text-lg text-slate-600">
-                Side-by-side comparison of two Scalar-Longitudinal Wave (SLW) link-budget models at the <span class="font-semibold">same physical distance r</span>. 
-                Each system has its own independent transmitter current. The detectors are co-located at identical range from their respective transmitters.
-            </p>
-        </div>
+  <main class="max-w-6xl mx-auto px-4 py-6 space-y-6">
+    <p class="text-slate-600 max-w-3xl">
+      Side-by-side educational comparison of two Scalar-Longitudinal Wave link-budget models at the
+      <strong>same physical distance</strong> <em>r</em>. Each system has its own transmitter current.
+      Not a claim that SLW is established physics.
+    </p>
 
-        <!-- Shared Range Control -->
-        <div class="bg-white border border-slate-200 rounded-3xl p-5 mb-6 shadow-sm">
-            <div class="flex flex-col md:flex-row md:items-center gap-y-4 gap-x-8">
-                <div class="md:w-64">
-                    <div class="flex items-center justify-between mb-1.5">
-                        <span class="font-semibold text-sm">Common Range <span class="text-slate-400">(both detectors)</span></span>
-                        <span id="common-r-val" class="font-mono text-2xl font-semibold text-sky-600 tabular-nums">10.0</span>
-                    </div>
-                    <input type="range" id="common-r-slider" class="w-full accent-sky-600" min="1" max="500" step="1" value="10">
-                    <div class="flex justify-between text-[10px] text-slate-400 mt-0.5">
-                        <div>1 km</div><div>500 km</div>
-                    </div>
-                </div>
-                
-                <div class="flex-1 text-xs text-slate-500">
-                    Both the Hively bifilar-coil detector and the Nikolova-Zimmerman plasma detector are placed at exactly the same distance r from their transmitters. 
-                    Adjust each transmitter current independently to compare performance.
-                </div>
-            </div>
+    <section class="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm">
+      <div class="flex flex-col md:flex-row md:items-end gap-4">
+        <div class="md:w-72">
+          <div class="flex justify-between items-baseline mb-1">
+            <span class="text-sm font-semibold">Common range <span class="text-slate-400">(both)</span></span>
+            <span class="font-mono text-xl text-sky-700 tabular-nums"><span id="rVal">10.0</span> km</span>
+          </div>
+          <input id="rSlider" type="range" min="1" max="500" step="1" value="10" class="accent-sky-600">
+          <div class="flex justify-between text-[10px] text-slate-400"><span>1 km</span><span>500 km</span></div>
         </div>
+        <p class="text-xs text-slate-500 flex-1">Move range or either current; metrics and the overlaid SNR curves update together.</p>
+      </div>
+    </section>
 
-        <!-- Two Systems Side by Side -->
-        <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
-            
-            <!-- ========== HIVELY SYSTEM ========== -->
-            <div class="bg-white border border-amber-200 rounded-3xl overflow-hidden shadow-sm">
-                <div class="bg-amber-600 px-5 py-3 flex items-center justify-between">
-                    <div class="flex items-center gap-x-3">
-                        <div class="system-label bg-white/90 text-amber-700">Hively</div>
-                        <div class="font-semibold text-white">EED / US Patent 9,306,527 B1</div>
-                    </div>
-                    <div class="text-amber-200 text-xs">Monopole + Skirt Balun → Bifilar Coil</div>
-                </div>
-                
-                <div class="p-5">
-                    <!-- Hively Current Slider -->
-                    <div class="mb-5">
-                        <div class="flex justify-between items-baseline mb-1.5 px-0.5">
-                            <span class="font-semibold text-sm">Transmitter Current <span class="text-amber-600">(Hively)</span></span>
-                            <span class="font-mono text-2xl font-semibold text-amber-600 tabular-nums" id="hively-I-val">5.00</span>
-                        </div>
-                        <input type="range" id="hively-I-slider" class="w-full accent-amber-600" min="0.1" max="10" step="0.05" value="5">
-                        <div class="flex justify-between text-[10px] text-slate-400 mt-0.5 px-0.5">
-                            <div>0.1 A</div><div>10 A</div>
-                        </div>
-                    </div>
-                    
-                    <!-- Hively Metrics -->
-                    <div class="grid grid-cols-2 gap-3 text-sm">
-                        <div class="bg-amber-50 border border-amber-100 rounded-2xl p-3">
-                            <div class="text-amber-600 text-xs font-medium mb-0.5">TOTAL RADIATED POWER</div>
-                            <div class="flex items-baseline"><span id="hively-P-rad" class="text-3xl font-semibold tabular-nums text-amber-700">754</span> <span class="ml-1 text-amber-600">W</span></div>
-                        </div>
-                        <div class="bg-amber-50 border border-amber-100 rounded-2xl p-3">
-                            <div class="text-amber-600 text-xs font-medium mb-0.5">POWER DENSITY @ r</div>
-                            <div class="flex items-baseline"><span id="hively-S" class="text-3xl font-semibold tabular-nums text-amber-700">60.0</span> <span class="ml-1 text-amber-600 text-sm">µW/m²</span></div>
-                        </div>
-                        <div class="bg-white border border-amber-100 rounded-2xl p-3 col-span-2">
-                            <div class="flex justify-between">
-                                <div>
-                                    <div class="text-amber-600 text-xs font-medium">DETECTOR OUTPUT CURRENT (rms)</div>
-                                    <div class="flex items-baseline"><span id="hively-I-out" class="text-4xl font-semibold tabular-nums text-amber-700">68.5</span> <span class="ml-1 text-amber-600">nA</span></div>
-                                </div>
-                                <div class="text-right">
-                                    <div class="text-amber-600 text-xs font-medium">SNR</div>
-                                    <div class="flex items-baseline justify-end"><span id="hively-SNR" class="text-4xl font-semibold tabular-nums text-amber-700">85.2</span> <span class="ml-1 text-amber-600">dB</span></div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="mt-3 text-[10px] text-amber-600/80 px-1">
-                        Isotropic SLW • P_rad ∝ I² • S(r) ∝ 1/r² • Palm-sized bifilar coil (A_eff = 78.5 cm², η = 50%)
-                    </div>
-                </div>
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <section class="bg-white border border-amber-200 rounded-2xl overflow-hidden shadow-sm">
+        <div class="bg-amber-600 text-white px-4 py-2 text-sm font-semibold">Hively · monopole + bifilar coil</div>
+        <div class="p-4 space-y-4">
+          <div>
+            <div class="flex justify-between mb-1">
+              <span class="text-sm font-semibold">TX current</span>
+              <span class="font-mono text-xl text-amber-700 tabular-nums"><span id="hIVal">5.00</span> A</span>
             </div>
-            
-            <!-- ========== NIKOLOVA-ZIMMERMAN SYSTEM ========== -->
-            <div class="bg-white border border-emerald-200 rounded-3xl overflow-hidden shadow-sm">
-                <div class="bg-emerald-600 px-5 py-3 flex items-center justify-between">
-                    <div class="flex items-center gap-x-3">
-                        <div class="system-label bg-white/90 text-emerald-700">Nikolova-Zimmerman</div>
-                        <div class="font-semibold text-white">2007 Paper (McMaster)</div>
-                    </div>
-                    <div class="text-emerald-200 text-xs">Folded Dipole → Plasma Detector</div>
-                </div>
-                
-                <div class="p-5">
-                    <!-- NZ Current Slider -->
-                    <div class="mb-5">
-                        <div class="flex justify-between items-baseline mb-1.5 px-0.5">
-                            <span class="font-semibold text-sm">Transmitter Peak Current <span class="text-emerald-600">(N-Z)</span></span>
-                            <span class="font-mono text-2xl font-semibold text-emerald-600 tabular-nums" id="nz-I-val">5.00</span>
-                        </div>
-                        <input type="range" id="nz-I-slider" class="w-full accent-emerald-600" min="0.1" max="10" step="0.05" value="5">
-                        <div class="flex justify-between text-[10px] text-slate-400 mt-0.5 px-0.5">
-                            <div>0.1 A</div><div>10 A</div>
-                        </div>
-                    </div>
-                    
-                    <!-- NZ Metrics -->
-                    <div class="grid grid-cols-2 gap-3 text-sm">
-                        <div class="bg-emerald-50 border border-emerald-100 rounded-2xl p-3">
-                            <div class="text-emerald-600 text-xs font-medium mb-0.5">LONGITUDINAL |A| @ r</div>
-                            <div class="flex items-baseline"><span id="nz-A" class="text-3xl font-semibold tabular-nums text-emerald-700">1.23</span> <span class="ml-1 text-emerald-600 text-sm">nWb/m</span></div>
-                        </div>
-                        <div class="bg-emerald-50 border border-emerald-100 rounded-2xl p-3">
-                            <div class="text-emerald-600 text-xs font-medium mb-0.5">DETECTOR I_RMS</div>
-                            <div class="flex items-baseline"><span id="nz-I-out" class="text-3xl font-semibold tabular-nums text-emerald-700">12.4</span> <span class="ml-1 text-emerald-600 text-sm">µA</span></div>
-                        </div>
-                        <div class="bg-white border border-emerald-100 rounded-2xl p-3 col-span-2">
-                            <div class="flex justify-between">
-                                <div>
-                                    <div class="text-emerald-600 text-xs font-medium">RECEIVED POWER (into 50 Ω)</div>
-                                    <div class="flex items-baseline"><span id="nz-P" class="text-3xl font-semibold tabular-nums text-emerald-700">-92.3</span> <span class="ml-1 text-emerald-600 text-sm">dBm</span></div>
-                                </div>
-                                <div class="text-right">
-                                    <div class="text-emerald-600 text-xs font-medium">SNR</div>
-                                    <div class="flex items-baseline justify-end"><span id="nz-SNR" class="text-4xl font-semibold tabular-nums text-emerald-700">42.7</span> <span class="ml-1 text-emerald-600">dB</span></div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="mt-3 text-[10px] text-emerald-600/80 px-1">
-                        |A| ∝ I / r (lossless) • Plasma detector responsivity R ≈ 264 k m/H • Power from local DC bias
-                    </div>
-                </div>
-            </div>
-            
+            <input id="hISlider" type="range" min="0.1" max="10" step="0.05" value="5" class="accent-amber-600">
+          </div>
+          <div class="grid grid-cols-2 gap-2 text-sm">
+            <div class="bg-amber-50 rounded-xl p-3"><div class="text-[10px] text-amber-700 font-semibold">P_RAD</div><div class="font-mono text-2xl tabular-nums text-amber-800"><span id="hPrad">—</span> <span id="hPradU" class="text-sm">W</span></div></div>
+            <div class="bg-amber-50 rounded-xl p-3"><div class="text-[10px] text-amber-700 font-semibold">S @ r</div><div class="font-mono text-2xl tabular-nums text-amber-800"><span id="hS">—</span> <span id="hSU" class="text-sm">µW/m²</span></div></div>
+            <div class="bg-amber-50 rounded-xl p-3"><div class="text-[10px] text-amber-700 font-semibold">I_OUT rms</div><div class="font-mono text-2xl tabular-nums text-amber-800"><span id="hIout">—</span> <span id="hIoutU" class="text-sm">nA</span></div></div>
+            <div class="bg-amber-50 rounded-xl p-3"><div class="text-[10px] text-amber-700 font-semibold">SNR</div><div class="font-mono text-2xl tabular-nums"><span id="hSNR">—</span> <span class="text-sm text-amber-700">dB</span></div></div>
+          </div>
+          <p class="text-[11px] text-amber-800/80">P_rad ∝ I² · S ∝ 1/r² · A_eff = 78.5 cm² · η = 50% · 50 Ω</p>
         </div>
+      </section>
 
-        <!-- Overlaid SNR Chart -->
-        <div class="mt-6 bg-white border border-slate-200 rounded-3xl p-5 shadow-sm">
-            <div class="flex items-center justify-between mb-3 px-2">
-                <div>
-                    <span class="font-semibold">SNR Comparison at Common Range</span>
-                    <span class="ml-2 text-xs px-2 py-0.5 bg-slate-100 rounded-2xl text-slate-500">log r scale</span>
-                </div>
-                <div class="text-xs text-slate-500">Hively (amber) vs Nikolova-Zimmerman (emerald)</div>
+      <section class="bg-white border border-emerald-200 rounded-2xl overflow-hidden shadow-sm">
+        <div class="bg-emerald-600 text-white px-4 py-2 text-sm font-semibold">Nikolova–Zimmerman · plasma detector</div>
+        <div class="p-4 space-y-4">
+          <div>
+            <div class="flex justify-between mb-1">
+              <span class="text-sm font-semibold">TX peak current</span>
+              <span class="font-mono text-xl text-emerald-700 tabular-nums"><span id="nIVal">5.00</span> A</span>
             </div>
-            
-            <div class="h-80 overlay-chart">
-                <canvas id="combined-snr-chart"></canvas>
-            </div>
-            
-            <div class="mt-2 text-[10px] text-center text-slate-400">
-                Vertical marker shows current common range. Both curves update when you move any slider.
-            </div>
+            <input id="nISlider" type="range" min="0.1" max="10" step="0.05" value="5" class="accent-emerald-600">
+          </div>
+          <div class="grid grid-cols-2 gap-2 text-sm">
+            <div class="bg-emerald-50 rounded-xl p-3"><div class="text-[10px] text-emerald-700 font-semibold">|A| @ r</div><div class="font-mono text-2xl tabular-nums text-emerald-800"><span id="nA">—</span> <span id="nAU" class="text-sm">nWb/m</span></div></div>
+            <div class="bg-emerald-50 rounded-xl p-3"><div class="text-[10px] text-emerald-700 font-semibold">I_RMS</div><div class="font-mono text-2xl tabular-nums text-emerald-800"><span id="nIout">—</span> <span id="nIoutU" class="text-sm">µA</span></div></div>
+            <div class="bg-emerald-50 rounded-xl p-3"><div class="text-[10px] text-emerald-700 font-semibold">P_LOAD</div><div class="font-mono text-2xl tabular-nums text-emerald-800"><span id="nP">—</span> <span class="text-sm">dBm</span></div></div>
+            <div class="bg-emerald-50 rounded-xl p-3"><div class="text-[10px] text-emerald-700 font-semibold">SNR</div><div class="font-mono text-2xl tabular-nums"><span id="nSNR">—</span> <span class="text-sm text-emerald-700">dB</span></div></div>
+          </div>
+          <p class="text-[11px] text-emerald-800/80">A_m ∝ I/r · R ≈ 264 k m/H · 1.3 GHz · local bias power (educational)</p>
         </div>
-
-        <!-- Explanations -->
-        <div class="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-6 text-sm">
-            
-            <!-- Hively explanation -->
-            <div class="bg-white border border-amber-200 rounded-3xl p-5">
-                <div class="font-semibold text-amber-700 mb-2 flex items-center gap-x-2">
-                    <i class="fa-solid fa-broadcast-tower"></i> 
-                    <span>Hively Model (EED + Patent)</span>
-                </div>
-                <div class="text-xs text-slate-600 space-y-1.5 leading-relaxed">
-                    <p>Uses the more complete electrodynamics (EED) framework. A monopole with skirt balun launches a pure gradient-driven current, producing an isotropic SLW with <span class="font-mono">B ≈ 0</span>.</p>
-                    <p class="font-mono text-amber-600">P_rad = I² / (4π) × Z₀ &nbsp;&nbsp; S(r) = P_rad / (4π r²)</p>
-                    <p>Detector: palm-sized bifilar coil (face-on, 78.5 cm²). No skin effect. Output current derived from power delivered to 50 Ω load with 50% overall efficiency.</p>
-                    <p class="text-amber-600/70">Reference: Hively &amp; Land (2021) J. Phys.: Conf. Ser. 1956 012011 + US 9,306,527 B1</p>
-                </div>
-            </div>
-            
-            <!-- NZ explanation -->
-            <div class="bg-white border border-emerald-200 rounded-3xl p-5">
-                <div class="font-semibold text-emerald-700 mb-2 flex items-center gap-x-2">
-                    <i class="fa-solid fa-flask"></i> 
-                    <span>Nikolova-Zimmerman Model (2007)</span>
-                </div>
-                <div class="text-xs text-slate-600 space-y-1.5 leading-relaxed">
-                    <p>Based on 2007 McMaster University experiments detecting time-dependent electromagnetic potentials at 1.3 GHz using a folded dipole transmitter and biased plasma (fluorescent tube) detector.</p>
-                    <p class="font-mono text-emerald-600">A_m = μ₀ I_m / (2π k₀ r) &nbsp;&nbsp; I_RMS = R · (A_m / √2)</p>
-                    <p>The longitudinal vector potential falls as 1/r. Received power is generated locally in the biased plasma detector (not extracted from the propagating wave energy). This leads to different scaling with transmitter current and range.</p>
-                    <p class="text-emerald-600/70">Reference: Nikolova &amp; Zimmerman, CEM-R-46, McMaster University, Nov 2007</p>
-                </div>
-            </div>
-        </div>
-
-        <!-- Disclaimer -->
-        <div class="mt-10 max-w-3xl text-xs text-slate-500 border-t pt-6">
-            <p class="font-semibold text-slate-600 mb-1">Educational Comparison Tool</p>
-            <p>
-                This combined simulator merges two independent SLW models for side-by-side evaluation at identical range. 
-                The Hively model follows classical radiated power scaling (1/r²). The Nikolova-Zimmerman model uses measured potential amplitude scaling (1/r) with a plasma-based detector whose output power is supplied locally.
-                Both are educational illustrations only. Real-world validation, efficiency, and system losses are not included.
-            </p>
-            <p class="mt-2">
-                Built by <span class="font-medium">Dan Britton (BrittonSolutions@icloud.com)</span> with assistance from Grok (xAI). 
-                Original separate simulators also created with Grok help. For research &amp; education only.
-            </p>
-        </div>
+      </section>
     </div>
 
-    <script>
-        // ================== CONSTANTS ==================
-        const Z0 = 376.73031346177;
-        const A_EFF = Math.PI * (0.05 ** 2);      // 78.54 cm²
-        const ETA = 0.50;
-        const R_LOAD = 50;
-        const NF_DB = 3;
-        const B_HZ = 100000;
+    <section class="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm">
+      <div class="flex justify-between items-baseline mb-2">
+        <h2 class="font-semibold">SNR vs range (log r)</h2>
+        <span class="text-xs text-slate-500">Vertical line = current common range</span>
+      </div>
+      <div id="chart" style="height:360px;width:100%;"></div>
+    </section>
 
-        // Nikolova-Zimmerman constants (from 2007 paper / original simulator)
-        const F_NZ = 1.3e9;
-        const C = 3e8;
-        const K0 = 2 * Math.PI * F_NZ / C;
-        const MU0 = 4 * Math.PI * 1e-7;
-        const R_RESP = 264030;                    // m/H  (plasma detector responsivity)
+    <section class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+      <div class="bg-white border border-amber-100 rounded-2xl p-4">
+        <h3 class="font-semibold text-amber-800 mb-2">Hively model</h3>
+        <p class="text-xs text-slate-600 leading-relaxed">Isotropic SLW radiated power into free space, bifilar detector with effective area and efficiency. References: Hively &amp; Land (2021); US 9,306,527 B1.</p>
+      </div>
+      <div class="bg-white border border-emerald-100 rounded-2xl p-4">
+        <h3 class="font-semibold text-emerald-800 mb-2">Nikolova–Zimmerman model</h3>
+        <p class="text-xs text-slate-600 leading-relaxed">Longitudinal vector-potential amplitude falling as 1/r with plasma responsivity. Reference: Nikolova &amp; Zimmerman, CEM-R-46 (2007).</p>
+      </div>
+    </section>
 
-        let chartInstance = null;
+    <footer class="text-xs text-slate-500 border-t pt-4 pb-8">
+      <p><strong class="text-slate-700">Educational comparison only.</strong> Built for Dan Britton (<a class="underline" href="mailto:BrittonSolutions@icloud.com">BrittonSolutions@icloud.com</a>). Real-world losses, efficiency, and validation are not included.</p>
+    </footer>
+  </main>
 
-        let state = {
-            commonRkm: 10.0,
-            hivelyI: 5.0,
-            nzI: 5.0
-        };
+  <script>
+    const Z0 = 376.73031346177;
+    const A_EFF = Math.PI * (0.05 ** 2);
+    const ETA = 0.50;
+    const R_LOAD = 50;
+    const NF_DB = 3;
+    const B_HZ = 100000;
+    const F_NZ = 1.3e9;
+    const C = 3e8;
+    const K0 = 2 * Math.PI * F_NZ / C;
+    const MU0 = 4 * Math.PI * 1e-7;
+    const R_RESP = 264030;
 
-        // ================== CALCULATION FUNCTIONS ==================
-        function calcHively(I, r_km) {
-            const r_m = r_km * 1000;
-            const P_rad = (I * I / (4 * Math.PI)) * Z0;
-            const S = P_rad / (4 * Math.PI * r_m * r_m);
-            const P_inc = S * A_EFF * ETA;
-            const P_load = P_inc;
-            const I_rms = Math.sqrt(P_load / R_LOAD);
-            
-            const P_load_dBm = (P_load > 0) ? 10 * Math.log10(P_load * 1000) : -Infinity;
-            const P_noise_dBm = -174 + 10 * Math.log10(B_HZ) + NF_DB;
-            const SNR_dB = (P_load_dBm > -Infinity) ? P_load_dBm - P_noise_dBm : -999;
-            
-            return { P_rad, S, I_rms, SNR_dB, P_load_dBm, P_noise_dBm };
+    const state = { rKm: 10, hI: 5, nI: 5 };
+
+    function calcHively(I, rKm) {
+      const r = rKm * 1000;
+      const P_rad = (I * I / (4 * Math.PI)) * Z0;
+      const S = P_rad / (4 * Math.PI * r * r);
+      const P_load = S * A_EFF * ETA;
+      const I_rms = Math.sqrt(Math.max(P_load, 0) / R_LOAD);
+      const P_load_dBm = P_load > 0 ? 10 * Math.log10(P_load * 1000) : -Infinity;
+      const P_noise_dBm = -174 + 10 * Math.log10(B_HZ) + NF_DB;
+      const SNR_dB = Number.isFinite(P_load_dBm) ? P_load_dBm - P_noise_dBm : -999;
+      return { P_rad, S, I_rms, SNR_dB };
+    }
+
+    function calcNZ(Ipeak, rKm) {
+      const r = rKm * 1000;
+      const A_m = (MU0 * Ipeak) / (2 * Math.PI * K0 * r);
+      const I_rms = R_RESP * (A_m / Math.SQRT2);
+      const P_load = I_rms * I_rms * R_LOAD;
+      const P_load_dBm = P_load > 0 ? 10 * Math.log10(P_load * 1000) : -Infinity;
+      const P_noise_dBm = -174 + 10 * Math.log10(B_HZ) + NF_DB;
+      const SNR_dB = Number.isFinite(P_load_dBm) ? P_load_dBm - P_noise_dBm : -999;
+      return { A_m, I_rms, P_load_dBm, SNR_dB };
+    }
+
+    function setText(id, text) { document.getElementById(id).textContent = text; }
+    function snrColor(el, snr) {
+      el.style.color = snr > 10 ? '#16a34a' : (snr > 0 ? '#ca8a04' : '#dc2626');
+    }
+
+    function updateMetrics() {
+      setText('rVal', state.rKm.toFixed(1));
+      setText('hIVal', state.hI.toFixed(2));
+      setText('nIVal', state.nI.toFixed(2));
+
+      const h = calcHively(state.hI, state.rKm);
+      if (h.P_rad > 1000) { setText('hPrad', (h.P_rad / 1000).toFixed(2)); setText('hPradU', 'kW'); }
+      else { setText('hPrad', h.P_rad.toFixed(0)); setText('hPradU', 'W'); }
+      if (h.S < 1e-6) { setText('hS', (h.S * 1e9).toFixed(1)); setText('hSU', 'nW/m²'); }
+      else { setText('hS', (h.S * 1e6).toFixed(1)); setText('hSU', 'µW/m²'); }
+      if (h.I_rms < 1e-9) { setText('hIout', (h.I_rms * 1e12).toFixed(1)); setText('hIoutU', 'pA'); }
+      else if (h.I_rms < 1e-6) { setText('hIout', (h.I_rms * 1e9).toFixed(1)); setText('hIoutU', 'nA'); }
+      else { setText('hIout', (h.I_rms * 1e6).toFixed(1)); setText('hIoutU', 'µA'); }
+      const hEl = document.getElementById('hSNR');
+      hEl.textContent = h.SNR_dB.toFixed(1);
+      snrColor(hEl, h.SNR_dB);
+
+      const n = calcNZ(state.nI, state.rKm);
+      if (n.A_m < 1e-9) { setText('nA', (n.A_m * 1e12).toFixed(2)); setText('nAU', 'pWb/m'); }
+      else if (n.A_m < 1e-6) { setText('nA', (n.A_m * 1e9).toFixed(2)); setText('nAU', 'nWb/m'); }
+      else { setText('nA', n.A_m.toExponential(2)); setText('nAU', 'Wb/m'); }
+      if (n.I_rms < 1e-6) { setText('nIout', (n.I_rms * 1e9).toFixed(1)); setText('nIoutU', 'nA'); }
+      else if (n.I_rms < 1e-3) { setText('nIout', (n.I_rms * 1e6).toFixed(1)); setText('nIoutU', 'µA'); }
+      else { setText('nIout', (n.I_rms * 1e3).toFixed(2)); setText('nIoutU', 'mA'); }
+      setText('nP', n.P_load_dBm.toFixed(1));
+      const nEl = document.getElementById('nSNR');
+      nEl.textContent = n.SNR_dB.toFixed(1);
+      snrColor(nEl, n.SNR_dB);
+    }
+
+    function updateChart() {
+      const rs = [], hSNR = [], nSNR = [];
+      const nPts = 60;
+      for (let i = 0; i < nPts; i++) {
+        const r = Math.pow(10, Math.log10(1) + (Math.log10(500) - Math.log10(1)) * (i / (nPts - 1)));
+        rs.push(r);
+        hSNR.push(Math.max(calcHively(state.hI, r).SNR_dB, -90));
+        nSNR.push(Math.max(calcNZ(state.nI, r).SNR_dB, -90));
+      }
+      const traces = [
+        { x: rs, y: hSNR, name: 'Hively', mode: 'lines', line: { color: '#f59e0b', width: 2.5 } },
+        { x: rs, y: nSNR, name: 'Nikolova–Zimmerman', mode: 'lines', line: { color: '#10b981', width: 2.5 } },
+        {
+          x: [state.rKm, state.rKm], y: [-90, 120], name: 'Common r', mode: 'lines',
+          line: { color: '#64748b', width: 2, dash: 'dot' }, hoverinfo: 'skip', showlegend: false
         }
+      ];
+      const layout = {
+        margin: { t: 20, r: 20, b: 50, l: 55 },
+        paper_bgcolor: 'rgba(0,0,0,0)',
+        plot_bgcolor: '#f8fafc',
+        xaxis: { title: 'Range (km)', type: 'log', gridcolor: '#e2e8f0' },
+        yaxis: { title: 'SNR (dB)', gridcolor: '#e2e8f0', range: [-90, Math.max(20, ...hSNR, ...nSNR) + 5] },
+        legend: { orientation: 'h', y: 1.12 },
+        font: { size: 11, color: '#475569' }
+      };
+      Plotly.react('chart', traces, layout, { responsive: true, displayModeBar: false });
+    }
 
-        function calcNZ(I_peak, r_km) {
-            const r_m = r_km * 1000;
-            
-            // Longitudinal vector potential amplitude (far zone, on axis)
-            const A_m = (MU0 * I_peak) / (2 * Math.PI * K0 * r_m);   // Wb/m or T·m
-            
-            // RMS detector output current from plasma responsivity
-            const I_rms = R_RESP * (A_m / Math.sqrt(2));
-            
-            // Power delivered into 50 Ω load
-            const P_load = I_rms * I_rms * R_LOAD;   // Watts
-            
-            const P_load_dBm = (P_load > 0) ? 10 * Math.log10(P_load * 1000) : -Infinity;
-            const P_noise_dBm = -174 + 10 * Math.log10(B_HZ) + NF_DB;
-            const SNR_dB = (P_load_dBm > -Infinity) ? P_load_dBm - P_noise_dBm : -999;
-            
-            return { A_m, I_rms, P_load, P_load_dBm, SNR_dB };
-        }
+    function sync() {
+      state.rKm = parseFloat(document.getElementById('rSlider').value);
+      state.hI = parseFloat(document.getElementById('hISlider').value);
+      state.nI = parseFloat(document.getElementById('nISlider').value);
+      updateMetrics();
+      updateChart();
+    }
 
-        // ================== UI UPDATE ==================
-        function updateAll() {
-            const { commonRkm, hivelyI, nzI } = state;
-            
-            // Update shared range display
-            document.getElementById('common-r-val').textContent = commonRkm.toFixed(1);
-            
-            // === HIVELY ===
-            const h = calcHively(hivelyI, commonRkm);
-            document.getElementById('hively-I-val').textContent = hivelyI.toFixed(2);
-            
-            // P_rad
-            const pRadEl = document.getElementById('hively-P-rad');
-            if (h.P_rad > 1000) {
-                pRadEl.textContent = (h.P_rad / 1000).toFixed(2);
-                pRadEl.nextElementSibling.textContent = 'kW';
-            } else {
-                pRadEl.textContent = h.P_rad.toFixed(0);
-                pRadEl.nextElementSibling.textContent = 'W';
-            }
-            
-            // S
-            const sEl = document.getElementById('hively-S');
-            if (h.S < 1e-6) {
-                sEl.textContent = (h.S * 1e9).toFixed(1);
-                sEl.nextElementSibling.textContent = 'nW/m²';
-            } else {
-                sEl.textContent = (h.S * 1e6).toFixed(1);
-                sEl.nextElementSibling.textContent = 'µW/m²';
-            }
-            
-            // I_out
-            const iOutEl = document.getElementById('hively-I-out');
-            if (h.I_rms < 1e-9) {
-                iOutEl.textContent = (h.I_rms * 1e12).toFixed(1);
-                iOutEl.nextElementSibling.textContent = 'pA';
-            } else if (h.I_rms < 1e-6) {
-                iOutEl.textContent = (h.I_rms * 1e9).toFixed(1);
-                iOutEl.nextElementSibling.textContent = 'nA';
-            } else {
-                iOutEl.textContent = (h.I_rms * 1e6).toFixed(1);
-                iOutEl.nextElementSibling.textContent = 'µA';
-            }
-            
-            // SNR
-            const snrEl = document.getElementById('hively-SNR');
-            snrEl.textContent = (h.SNR_dB > 999) ? '>999' : h.SNR_dB.toFixed(1);
-            snrEl.style.color = (h.SNR_dB > 10) ? '#16a34a' : (h.SNR_dB > 0 ? '#ca8a04' : '#dc2626');
-            
-            // === NIKOLOVA-ZIMMERMAN ===
-            const nz = calcNZ(nzI, commonRkm);
-            document.getElementById('nz-I-val').textContent = nzI.toFixed(2);
-            
-            // |A|
-            const aEl = document.getElementById('nz-A');
-            if (nz.A_m < 1e-9) {
-                aEl.textContent = (nz.A_m * 1e12).toFixed(2);
-                aEl.nextElementSibling.textContent = 'pWb/m';
-            } else if (nz.A_m < 1e-6) {
-                aEl.textContent = (nz.A_m * 1e9).toFixed(2);
-                aEl.nextElementSibling.textContent = 'nWb/m';
-            } else {
-                aEl.textContent = nz.A_m.toExponential(2);
-                aEl.nextElementSibling.textContent = 'Wb/m';
-            }
-            
-            // I_RMS
-            const iNzEl = document.getElementById('nz-I-out');
-            if (nz.I_rms < 1e-6) {
-                iNzEl.textContent = (nz.I_rms * 1e9).toFixed(1);
-                iNzEl.nextElementSibling.textContent = 'nA';
-            } else if (nz.I_rms < 1e-3) {
-                iNzEl.textContent = (nz.I_rms * 1e6).toFixed(1);
-                iNzEl.nextElementSibling.textContent = 'µA';
-            } else {
-                iNzEl.textContent = (nz.I_rms * 1e3).toFixed(2);
-                iNzEl.nextElementSibling.textContent = 'mA';
-            }
-            
-            // P dBm
-            document.getElementById('nz-P').textContent = nz.P_load_dBm.toFixed(1);
-            
-            // SNR
-            const snrNzEl = document.getElementById('nz-SNR');
-            snrNzEl.textContent = (nz.SNR_dB > 999) ? '>999' : nz.SNR_dB.toFixed(1);
-            snrNzEl.style.color = (nz.SNR_dB > 10) ? '#16a34a' : (nz.SNR_dB > 0 ? '#ca8a04' : '#dc2626');
-            
-            // Update chart
-            updateCombinedChart();
-        }
-
-        function updateCombinedChart() {
-            if (!chartInstance) return;
-            
-            const labels = [];
-            const hivelySNR = [];
-            const nzSNR = [];
-            const rVals = [];
-            
-            const numPoints = 55;
-            const minR = 1;
-            const maxR = 500;
-            
-            for (let i = 0; i < numPoints; i++) {
-                const logMin = Math.log10(minR);
-                const logMax = Math.log10(maxR);
-                const r = Math.pow(10, logMin + (logMax - logMin) * (i / (numPoints - 1)));
-                rVals.push(r);
-                labels.push(r < 10 ? r.toFixed(1) : Math.round(r));
-                
-                const h = calcHively(state.hivelyI, r);
-                const nz = calcNZ(state.nzI, r);
-                
-                hivelySNR.push(Math.max(h.SNR_dB, -90));
-                nzSNR.push(Math.max(nz.SNR_dB, -90));
-            }
-            
-            chartInstance.data.labels = labels;
-            chartInstance.data.datasets[0].data = hivelySNR;
-            chartInstance.data.datasets[1].data = nzSNR;
-            
-            // Find closest index for vertical marker
-            let idx = 0;
-            let minDiff = Infinity;
-            for (let i = 0; i < rVals.length; i++) {
-                const d = Math.abs(rVals[i] - state.commonRkm);
-                if (d < minDiff) { minDiff = d; idx = i; }
-            }
-            
-            // Annotation line
-            chartInstance.options.plugins.annotation = {
-                annotations: {
-                    line1: {
-                        type: 'line',
-                        xMin: idx,
-                        xMax: idx,
-                        borderColor: '#64748b',
-                        borderWidth: 2,
-                        borderDash: [3, 2],
-                        label: {
-                            content: state.commonRkm.toFixed(0) + ' km',
-                            display: true,
-                            position: 'start',
-                            backgroundColor: '#64748b',
-                            color: '#fff',
-                            font: { size: 10, weight: 'bold' }
-                        }
-                    }
-                }
-            };
-            
-            chartInstance.update();
-        }
-
-        function initializeChart() {
-            const ctx = document.getElementById('combined-snr-chart');
-            
-            chartInstance = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: [],
-                    datasets: [
-                        {
-                            label: 'Hively (EED)',
-                            data: [],
-                            borderColor: '#f59e0b',
-                            borderWidth: 2.5,
-                            fill: false,
-                            tension: 0.2,
-                            pointRadius: 0
-                        },
-                        {
-                            label: 'Nikolova-Zimmerman (2007)',
-                            data: [],
-                            borderColor: '#10b981',
-                            borderWidth: 2.5,
-                            fill: false,
-                            tension: 0.2,
-                            pointRadius: 0
-                        }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        x: {
-                            grid: { color: '#e2e8f0', lineWidth: 0.5 },
-                            ticks: { color: '#64748b', font: { size: 10 }, maxTicksLimit: 9 },
-                            title: { display: true, text: 'Range (km) — log scale', color: '#64748b', font: { size: 11 } }
-                        },
-                        y: {
-                            grid: { color: '#e2e8f0', lineWidth: 0.5 },
-                            ticks: { color: '#64748b', font: { size: 10 } },
-                            title: { display: true, text: 'SNR (dB)', color: '#64748b', font: { size: 11 } }
-                        }
-                    },
-                    plugins: {
-                        legend: { display: true, position: 'top', labels: { boxWidth: 12, padding: 15, font: { size: 11 } } },
-                        tooltip: {
-                            backgroundColor: '#1e2937',
-                            callbacks: {
-                                label: (ctx) => ctx.dataset.label + ': ' + ctx.raw.toFixed(1) + ' dB'
-                            }
-                        }
-                    }
-                }
-            });
-            
-            // Initial draw
-            setTimeout(() => {
-                updateCombinedChart();
-            }, 80);
-        }
-
-        function setupControls() {
-            const rSlider = document.getElementById('common-r-slider');
-            const hI = document.getElementById('hively-I-slider');
-            const nI = document.getElementById('nz-I-slider');
-            
-            rSlider.value = state.commonRkm;
-            hI.value = state.hivelyI;
-            nI.value = state.nzI;
-            
-            function sync() {
-                state.commonRkm = parseFloat(rSlider.value);
-                state.hivelyI = parseFloat(hI.value);
-                state.nzI = parseFloat(nI.value);
-                updateAll();
-            }
-            
-            rSlider.addEventListener('input', sync);
-            hI.addEventListener('input', sync);
-            nI.addEventListener('input', sync);
-            
-            // Initial paint
-            setTimeout(() => {
-                updateAll();
-            }, 30);
-        }
-
-        function initializeTailwind() {
-            // nothing extra needed
-        }
-
-        function boot() {
-            initializeTailwind();
-            setupControls();
-            initializeChart();
-            
-            // Keyboard hint
-            console.log('%c[Combined SLW Simulator] Hively + Nikolova-Zimmerman models loaded. Shared range + independent currents.', 'color:#64748b');
-        }
-        
-        window.onload = boot;
-    </script>
+    ['rSlider', 'hISlider', 'nISlider'].forEach(id => {
+      document.getElementById(id).addEventListener('input', sync);
+    });
+    window.addEventListener('load', sync);
+  </script>
 </body>
 </html>
