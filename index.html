@@ -57,12 +57,12 @@
             <input id="hISlider" type="range" min="0.1" max="10" step="0.05" value="5" class="accent-amber-600">
           </div>
           <div class="grid grid-cols-2 gap-2 text-sm">
-            <div class="bg-amber-50 rounded-xl p-3"><div class="text-[10px] text-amber-700 font-semibold">P_RAD</div><div class="font-mono text-2xl tabular-nums text-amber-800"><span id="hPrad">—</span> <span id="hPradU" class="text-sm">W</span></div></div>
-            <div class="bg-amber-50 rounded-xl p-3"><div class="text-[10px] text-amber-700 font-semibold">S @ r</div><div class="font-mono text-2xl tabular-nums text-amber-800"><span id="hS">—</span> <span id="hSU" class="text-sm">µW/m²</span></div></div>
+            <div class="bg-amber-50 rounded-xl p-3"><div class="text-[10px] text-amber-700 font-semibold">P_TOTAL (derived)</div><div class="font-mono text-2xl tabular-nums text-amber-800"><span id="hPrad">—</span> <span id="hPradU" class="text-sm">W</span></div></div>
+            <div class="bg-amber-50 rounded-xl p-3"><div class="text-[10px] text-amber-700 font-semibold">P_OUT @ r (W/m²)</div><div class="font-mono text-2xl tabular-nums text-amber-800"><span id="hS">—</span> <span id="hSU" class="text-sm">µW/m²</span></div></div>
             <div class="bg-amber-50 rounded-xl p-3"><div class="text-[10px] text-amber-700 font-semibold">I_OUT rms</div><div class="font-mono text-2xl tabular-nums text-amber-800"><span id="hIout">—</span> <span id="hIoutU" class="text-sm">nA</span></div></div>
             <div class="bg-amber-50 rounded-xl p-3"><div class="text-[10px] text-amber-700 font-semibold">SNR</div><div class="font-mono text-2xl tabular-nums"><span id="hSNR">—</span> <span class="text-sm text-amber-700">dB</span></div></div>
           </div>
-          <p class="text-[11px] text-amber-800/80">P_rad ∝ I² · S ∝ 1/r² · A_eff = 78.5 cm² · η = 50% · 50 Ω</p>
+          <p class="text-[11px] text-amber-800/80">P_OUT = I_pk² Z₀ / [2 (4π r)²] W/m² (paper Eq. 38/B5 per erratum, FACT; I = peak, ASSUMPTION) · P_total = 4π r² P_OUT = I_pk² Z₀/(8π) (derived, ASSUMPTION) · ∝ 1/r² · A_eff = 78.5 cm² · η = 50% · 50 Ω</p>
         </div>
       </section>
 
@@ -106,6 +106,11 @@
       </div>
     </section>
 
+    <section id="formula-history" class="bg-amber-50 border border-amber-200 rounded-2xl p-4 text-xs text-slate-600">
+      <p><b>Formula history (2026-09-30, version pout-erratum-v1).</b> <b>FACT</b> (erratum-sourced): Hively &amp; Loebl 2019 Eq. 38/B5 as corrected by the erratum (Phys. Essays 32(3), 417) is P<sub>OUT</sub> = I² r̂ / [2 (4π r)²] · √(μ/ε), a power <em>density</em> in W/m² along r̂. Until this date this page used the as-first-printed form without the ½ (I² Z / (4π r)²), which is 3.01 dB (×2) too high; every power or density value is now ×0.5 (−3.01 dB) and every field amplitude ×0.7071. <b>ASSUMPTION</b>: I is the peak amplitude (confirmed by Dan Britton, 2026-09-30). <b>DERIVED / ASSUMPTION</b> (spherical integral, not the paper's P<sub>OUT</sub>): total watts = 4π r² · P<sub>OUT</sub> = I² Z / (8π). US 9,306,527 Eq. 15, P = (I²/4π)√(μ/ε) in watts, is quoted unchanged as a patent quote; it is twice the erratum-integrated total (documented difference: the erratum does not correct the patent). The Nikolova–Zimmerman model on this page is unchanged.</p>
+      <p class="mt-1 text-slate-500">Version: pout-erratum-v1 (2026-09-30).</p>
+    </section>
+
     <footer class="text-xs text-slate-500 border-t pt-4 pb-8">
       <p><strong class="text-slate-700">Educational comparison only.</strong> Built for Dan Britton (<a class="underline" href="mailto:BrittonSolutions@icloud.com">BrittonSolutions@icloud.com</a>). Real-world losses, efficiency, and validation are not included.</p>
     </footer>
@@ -128,8 +133,11 @@
 
     function calcHively(I, rKm) {
       const r = rKm * 1000;
-      const P_rad = (I * I / (4 * Math.PI)) * Z0;
-      const S = P_rad / (4 * Math.PI * r * r);
+      // P_OUT per Hively & Loebl 2019 Eq. 38/B5 as corrected by the erratum (Phys. Essays 32(3) 417): W/m^2 = I_pk^2 Z0/[2 (4 pi r)^2]
+      // (I = peak, ASSUMPTION). Was I^2 Z0/(4 pi r)^2 (no 1/2) before 2026-09-30.
+      const S = (I * I * Z0) / (2 * Math.pow(4 * Math.PI * r, 2));
+      // DERIVED (ASSUMPTION: spherical integral, not the paper's P_OUT): total watts = 4 pi r^2 P_OUT = I^2 Z0/(8 pi)
+      const P_rad = S * 4 * Math.PI * r * r;
       const P_load = S * A_EFF * ETA;
       const I_rms = Math.sqrt(Math.max(P_load, 0) / R_LOAD);
       const P_load_dBm = P_load > 0 ? 10 * Math.log10(P_load * 1000) : -Infinity;
